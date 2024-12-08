@@ -1,0 +1,246 @@
+/* Genel Stil */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f8f8;
+}
+
+/* Header */
+.header {
+    background-color: #4382d9;
+    text-align: center;
+    padding: 20px 0;
+}
+
+.logo img {
+    max-width: 150px;
+}
+
+/* Menu Grid */
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* Her satıra 4 öğe sığacak şekilde düzenlendi */
+    gap: 20px;
+    padding: 20px;
+}
+
+.menu-item {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.menu-item:hover {
+    transform: translateY(-5px);
+}
+
+.menu-item img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.menu-item:hover img {
+    transform: scale(1.1);
+}
+
+.overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+}
+
+.menu-item a {
+    display: block;
+    position: relative;
+    text-decoration: none;
+}
+
+/* Footer */
+.footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 10px 20px;
+}
+
+.footer .social-media a {
+    color: #4382d9;
+    text-decoration: none;
+    margin: 0 5px;
+}
+
+.footer .social-media a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .menu-grid {
+        grid-template-columns: 1fr; /* Küçük ekranlarda tek sütun düzeni */
+    }
+
+    .overlay {
+        font-size: 1.2rem;
+    }
+}
+
+
+
+
+
+/* genel css kodu burda bitiyor !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
+
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+/* Header */
+.header {
+    background-color: #4382d9;
+    text-align: center;
+    padding: 10px;
+}
+
+.header .logo img {
+    max-width: 200px;
+}
+
+/* Menu List */
+.menu-list {
+    padding: 20px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    background-color: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.menu-item .item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.menu-item .item-img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover; 
+    border-radius: 8px; 
+}
+
+
+.menu-item .item-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.menu-item .item-name {
+    font-size: 16px;
+    font-weight: bold;
+    margin-left: 10px;
+    width: 30%;
+}
+
+.menu-item .item-price {
+    font-size: 14px;
+    color: #FF7F50;
+    width: 15%;
+    text-align: center;
+}
+
+.menu-item .add-to-cart {
+    padding: 5px 15px;
+    background-color: #4382d9;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.menu-item .item-quantity {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 20%;
+}
+
+.menu-item .decrease, .menu-item .increase {
+    padding: 5px;
+    background-color: #4382d9;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.menu-item .quantity {
+    width: 40px;
+    text-align: center;
+    margin: 0 5px;
+}
+
+/* Cart Section */
+.cart {
+    position: fixed;
+    bottom: 20px;
+    right: 900px;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 250px;
+    z-index: 9999;
+    display: none;
+}
+
+.cart-items {
+    margin-bottom: 20px;
+}
+
+.cart-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cart-footer p {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.cart-footer button {
+    padding: 10px 20px;
+    background-color: #4382d9;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+footer {
+    background-color: #4382d9;
+    color: white;
+    text-align: center;
+    padding: 10px;
+}

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sıcak İçecekler</title>
+    <link rel="stylesheet" href="../static/styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <img src="../static/pictures/logo.webp" alt="pictures">
+        </div>
+    </header>
+
+    <main class="menu-list">
+        <h1>Sıcak İçecekler</h1>
+        <div class="menu-item">
+            <div class="item">
+                <img src="../static/pictures/cay.jpg" class="item-img" alt="Kahve">
+                <div class="item-info">
+                    <p class="item-name">Çay</p>
+                    <span class="item-price">₺20</span>
+                    <div class="item-quantity">
+                        <button class="decrease">-</button>
+                        <input type="number" class="quantity" value="1" min="1">
+                        <button class="increase">+</button>
+                    </div>
+                    <button class="add-to-cart" data-name="Çay" data-price="20">Ekle</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-item">
+            <div class="item">
+                <img src="../static/pictures/kahve.webp" class="item-img" alt="Kahve">
+                <div class="item-info">
+                    <p class="item-name">Kahve</p>
+                    <span class="item-price">₺30</span>
+                    <div class="item-quantity">
+                        <button class="decrease">-</button>
+                        <input type="number" class="quantity" value="1" min="1">
+                        <button class="increase">+</button>
+                    </div>
+                    <button class="add-to-cart" data-name="Kahve" data-price="30">Ekle</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-item">
+            <div class="item">
+                <img src="../static/pictures/sıcçik.webp" class="item-img" alt="Kahve">
+                <div class="item-info">
+                    <p class="item-name">Sıcak Çikolata</p>
+                    <span class="item-price">₺35</span>
+                    <div class="item-quantity">
+                        <button class="decrease">-</button>
+                        <input type="number" class="quantity" value="1" min="1">
+                        <button class="increase">+</button>
+                    </div>
+                    <button class="add-to-cart" data-name="Sıcak Çikolata" data-price="35">Ekle</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-item">
+            <div class="item">
+                <img src="../static/pictures/latte.webp" class="item-img" alt="Kahve">
+                <div class="item-info">
+                    <p class="item-name">Latte</p>
+                    <span class="item-price">₺40</span>
+                    <div class="item-quantity">
+                        <button class="decrease">-</button>
+                        <input type="number" class="quantity" value="1" min="1">
+                        <button class="increase">+</button>
+                    </div>
+                    <button class="add-to-cart" data-name="Latte" data-price="40">Ekle</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-item">
+            <div class="item">
+                <img src="../static/pictures/espresso.webp" class="item-img" alt="Kahve">
+                <div class="item-info">
+                    <p class="item-name">Espresso</p>
+                    <span class="item-price">₺25</span>
+                    <div class="item-quantity">
+                        <button class="decrease">-</button>
+                        <input type="number" class="quantity" value="1" min="1">
+                        <button class="increase">+</button>
+                    </div>
+                    <button class="add-to-cart" data-name="Espresso" data-price="25">Ekle</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Sepet Satırı -->
+    <section class="cart" style="display: none;">
+        <h2>Sepet</h2>
+        <div class="cart-items"></div>
+        <div class="cart-footer">
+            <p>Toplam: <span id="total-price">₺0</span></p>
+            <button id="confirm-order">Siparişi Onayla</button>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p> © Namesake Software. Tüm hakları saklıdır.</p>
+    </footer>
+
+    <script src="../static/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sipariş Yönetimi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Sipariş Yönetimi</h1>
+        <table class="table table-hover mt-4">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Masa</th>
+                    <th>Sipariş Detayları</th>
+                    <th>Durum</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Masa 5</td>
+                    <td>2x Espresso, 1x Latte</td>
+                    <td><span class="badge bg-warning">Bekliyor</span></td>
+                    <td>
+                        <a href="/complete_order/1" class="btn btn-success btn-sm">Tamamla</a>
+                        <a href="/cancel_order/1" class="btn btn-danger btn-sm">İptal Et</a>
+                    </td>
+                </tr>
+                <!-- Diğer siparişler -->
+            </tbody>
+        </table>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+
+
+
