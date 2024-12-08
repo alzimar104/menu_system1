@@ -9,5 +9,6 @@ class MenuItem(db.Model):
 
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    items = db.Column(db.String(200), nullable=False)  # Sipariş edilen ürünler
-    status = db.Column(db.String(50), default='Beklemede')
+    table_number = db.Column(db.Integer, nullable=False)
+    details = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(50), nullable=False, default='Bekliyor')

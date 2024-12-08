@@ -65,6 +65,16 @@ def manage_orders():
     orders = Order.query.all()
     return render_template('manage_orders.html', orders=orders)
 
+@app.route('/add_order', methods=['POST'])
+def add_order():
+    table_number = request.form.get('table_number')
+    details = request.form.get('details')
+    new_order = Order(table_number=table_number, details=details, status='Bekliyor')
+    db.session.add(new_order)
+    db.session.commit()
+    flash('Sipariş başarıyla kaydedildi!', 'success')
+    return redirect(url_for('manage_orders'))
+
 @app.route('/complete_order/<int:order_id>')
 def complete_order(order_id):
     order = Order.query.get_or_404(order_id)

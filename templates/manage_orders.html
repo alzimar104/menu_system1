@@ -9,6 +9,8 @@
 <body>
     <div class="container mt-5">
         <h1 class="text-center">Sipariş Yönetimi</h1>
+
+        <!-- Siparişler Tablosu -->
         <table class="table table-hover mt-4">
             <thead class="table-dark">
                 <tr>
@@ -20,24 +22,31 @@
                 </tr>
             </thead>
             <tbody>
+                {% for order in orders %}
                 <tr>
-                    <td>1</td>
-                    <td>Masa 5</td>
-                    <td>2x Espresso, 1x Latte</td>
-                    <td><span class="badge bg-warning">Bekliyor</span></td>
+                    <td>{{ order.id }}</td>
+                    <td>{{ order.table_number }}</td>
+                    <td>{{ order.details }}</td>
                     <td>
-                        <a href="/complete_order/1" class="btn btn-success btn-sm">Tamamla</a>
-                        <a href="/cancel_order/1" class="btn btn-danger btn-sm">İptal Et</a>
+                        {% if order.status == 'Bekliyor' %}
+                            <span class="badge bg-warning">Bekliyor</span>
+                        {% elif order.status == 'Tamamlandı' %}
+                            <span class="badge bg-success">Tamamlandı</span>
+                        {% elif order.status == 'İptal' %}
+                            <span class="badge bg-danger">İptal</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if order.status == 'Bekliyor' %}
+                            <a href="{{ url_for('complete_order', order_id=order.id) }}" class="btn btn-success btn-sm">Tamamla</a>
+                            <a href="{{ url_for('cancel_order', order_id=order.id) }}" class="btn btn-danger btn-sm">İptal Et</a>
+                        {% endif %}
                     </td>
                 </tr>
-                <!-- Diğer siparişler -->
+                {% endfor %}
             </tbody>
         </table>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-
-
-
