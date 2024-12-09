@@ -16,11 +16,16 @@ class MenuItem(db.Model):
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     table_number = db.Column(db.Integer, nullable=False)  # Masa numarası
-    details = db.Column(db.Text, nullable=False)          # Sipariş detayları (JSON yerine açıklama)
+    details = db.Column(db.JSON, nullable=False)  # Sipariş detayları (JSON formatında saklanır)
     status = db.Column(db.String(50), nullable=False, default='Bekliyor')  # Sipariş durumu
-    total_price = db.Column(db.Float, nullable=False, default=0.0)         # Toplam fiyat
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)  # Sipariş oluşturma zamanı
 
+    # Dinamik olarak toplam fiyatı hesaplayan property
+    @property
+    def total_price(self):
+        if not self.details:
+            return 0.0
+        return sum(item['price'] * item['quantity'] for item in self.details)
+    
 class OrderItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
@@ -100,15 +105,8 @@ def add_order():
     db.session.commit()
     return jsonify({"message": "Sipariş başarıyla kaydedildi."}), 201
 
-@app.route('/submit_order', methods=['POST', 'GET'])
+@app.route('/submit_order', methods=['POST'])
 def submit_order():
-    if request.method == 'POST':
-        data = request.get_json()
-        ...
-        return jsonify({'message': 'Sipariş başarıyla kaydedildi!'}), 201
-
-    if request.method == 'GET':
-        return "Lütfen bu endpoint için POST isteği gönderin.", 405
     data = request.get_json()
     table_number = data.get('table_number')
     cart = data.get('details')
@@ -119,34 +117,54 @@ def submit_order():
 
     try:
         # Siparişi kaydet
-        total_price = sum(item['price'] * item['quantity'] for item in cart)
-        order = Order(
+        new_order = Order(
             table_number=table_number,
-            details='OrderItem tablosunda detaylar saklanıyor.',
+            details=cart,
             status='Bekliyor',
-            total_price=total_price
         )
-        db.session.add(order)
-        db.session.commit()
+        db.session.add(new_order)
+        db.session.commit()  # Order kaydını veritabanına ekleyin
+
+        # Günlük: Sipariş kaydedildi
+        app.logger.info(f"Yeni sipariş eklendi: {new_order.id}")
 
         # Sipariş ürünlerini kaydet
         for item in cart:
             order_item = OrderItem(
-                order_id=order.id,
+                order_id=new_order.id,  # İlişkilendirme için sipariş ID'si
                 product_name=item['name'],
                 quantity=item['quantity'],
                 price=item['price'],
                 total_price=item['price'] * item['quantity']
             )
             db.session.add(order_item)
+            app.logger.info(f"OrderItem eklendi: {order_item.product_name} - {order_item.total_price}")
 
-        db.session.commit()
-        return jsonify({'message': 'Sipariş başarıyla kaydedildi!'}), 201
+        db.session.commit()  # Tüm değişiklikleri kaydedin
+
+        # Günlük: Sipariş tamamlandı
+        app.logger.info(f"Sipariş başarıyla tamamlandı: {new_order.id}")
+        return jsonify({'message': 'Sipariş başarıyla kaydedildi!', 'total_price': new_order.total_price}), 201
 
     except Exception as e:
-        db.session.rollback()
+        db.session.rollback()  # Hata durumunda değişiklikleri geri alın
         app.logger.error(f"Veritabanına kaydedilirken hata oluştu: {e}")
         return jsonify({'message': f'Hata oluştu: {str(e)}'}), 500
+
+
+
+
+
+@app.route('/order/<int:order_id>', methods=['GET'])
+def get_order(order_id):
+    order = Order.query.get_or_404(order_id)
+    return jsonify({
+        'id': order.id,
+        'table_number': order.table_number,
+        'details': order.details,
+        'status': order.status,
+        'total_price': order.total_price  # Dinamik olarak hesaplanır
+    })
 
 
 @app.route('/complete_order/<int:order_id>')
@@ -164,6 +182,7 @@ def cancel_order(order_id):
     db.session.commit()
     flash('Sipariş başarıyla iptal edildi!', 'danger')
     return redirect(url_for('manage_orders'))
+
 
 @app.route('/menu')
 def menu():
