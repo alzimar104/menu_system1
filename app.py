@@ -67,8 +67,7 @@ def manage_menu():
 
 @app.route('/manage_tables')
 def manage_tables():
-    return render_template('manage_tables.html') 
-
+    return render_template('manage_tables.html')
 
 @app.route('/add_menu_item', methods=['POST'])
 def add_menu_item():
@@ -180,13 +179,34 @@ def get_completed_orders():
         {
             "id": order.id,
             "table_number": order.table_number,
-            "details": order.details,
+            "details": json.loads(order.details) if isinstance(order.details, str) else order.details,
             "total_price": order.total_price,
             "completed_at": order.completed_at.strftime('%Y-%m-%d %H:%M:%S')
         }
         for order in completed_orders
     ]
     return jsonify(data)
+
+
+@app.route('/api/delete_table', methods=['POST'])
+def delete_table():
+    data = request.get_json()
+    table_number = data.get('table_number')
+
+    if not table_number:
+        return jsonify({"error": "Masa numarası belirtilmedi."}), 400
+
+    try:
+        # İlgili masa numarasına ait siparişleri sil
+        orders = CompletedOrder.query.filter_by(table_number=table_number).all()
+        for order in orders:
+            db.session.delete(order)
+        db.session.commit()
+        return jsonify({"message": f"Masa {table_number} başarıyla silindi."}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Hata oluştu: {str(e)}"}), 500
+
 
 if __name__ == '__main__':
     with app.app_context():

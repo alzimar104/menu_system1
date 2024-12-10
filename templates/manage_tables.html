@@ -45,7 +45,7 @@
             color: #007bff;
         }
 
-        .order-item {
+        .order-item, .paid-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -99,14 +99,6 @@
             font-weight: bold;
         }
 
-        .paid-orders {
-            margin-top: 10px;
-            border-top: 1px solid #ddd;
-            padding-top: 10px;
-            font-size: 12px;
-            color: #555;
-        }
-
         .total-price {
             text-align: right;
             font-weight: bold;
@@ -117,68 +109,34 @@
 <body>
     <h1>Masalar Yönetimi</h1>
 
-    <div class="table-grid" id="orders-container">
-        <!-- Masalar burada oluşturulacak -->
-    </div>
+    <div class="table-grid" id="orders-container"></div>
 
     <script>
+        const API_URL = '/api/completed_orders';
+        const DELETE_URL = '/api/delete_table';
+
         let orders = [];
-
-        const ordersContainer = document.getElementById('orders-container');
-
-        // Silinen masaların IDsini tutan localStorage key'i
-        const DELETED_TABLES_KEY = "deletedTables";
-
-        // LocalStorage'den silinen masaları al
-        function getDeletedTables() {
-            const data = localStorage.getItem(DELETED_TABLES_KEY);
-            return data ? JSON.parse(data) : [];
-        }
-
-        // LocalStorage'de silinen masaları güncelle
-        function setDeletedTables(deletedTables) {
-            localStorage.setItem(DELETED_TABLES_KEY, JSON.stringify(deletedTables));
-        }
 
         async function fetchOrders() {
             try {
-                const response = await fetch('/api/completed_orders');
+                const response = await fetch(API_URL);
                 const completedOrders = await response.json();
 
-                const deletedTables = getDeletedTables();
-
-                // Aynı masaya ait siparişleri birleştir
-                const groupedOrders = completedOrders.reduce((acc, order) => {
-                    const existingTable = acc.find(o => o.tableNumber === order.table_number);
-                    if (existingTable) {
-                        existingTable.items.push(...order.details.map(item => ({
-                            name: item.name,
-                            price: item.price,
-                            quantity: item.quantity
-                        })));
-                    } else {
-                        acc.push({
-                            id: order.id,
-                            tableNumber: order.table_number,
-                            items: order.details.map(item => ({
-                                name: item.name,
-                                price: item.price,
-                                quantity: item.quantity
-                            })),
-                            paidItems: []
-                        });
+                orders = completedOrders.reduce((grouped, order) => {
+                    let table = grouped.find(t => t.tableNumber === order.table_number);
+                    if (!table) {
+                        table = { tableNumber: order.table_number, items: [], paidItems: [] };
+                        grouped.push(table);
                     }
-                    return acc;
-                }, []);
 
-                orders = groupedOrders
-                    .filter(order => !deletedTables.includes(order.tableNumber)) // Silinen masaları filtrele
-                    .map(order => ({
-                        id: order.id,
-                        tableNumber: order.tableNumber,
-                        items: order.items,
-                        paidItems: []
-                    }));
+                    table.items.push(...order.details.map(item => ({
+                        name: item.name,
+                        price: item.price,
+                        quantity: item.quantity
+                    })));
+
+                    return grouped;
+                }, []);
 
                 displayOrders();
             } catch (error) {
@@ -187,73 +145,27 @@
         }
 
         function displayOrders() {
+            const ordersContainer = document.getElementById('orders-container');
             ordersContainer.innerHTML = '';
+
             orders.forEach((order, index) => {
                 const card = document.createElement('div');
                 card.classList.add('table-card');
-                card.setAttribute('data-index', index);
 
-                const header = document.createElement('div');
-                header.classList.add('table-header');
-                header.textContent = `Masa ${order.tableNumber}`;
-                card.appendChild(header);
-
-                const totalElement = document.createElement('div');
-                totalElement.classList.add('total-price');
-                const total = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-                totalElement.innerHTML = `<strong>Toplam:</strong> ₺${total.toFixed(2)}`;
-                card.appendChild(totalElement);
+                card.innerHTML = `
+                    <div class="table-header">Masa ${order.tableNumber}</div>
+                    <div class="total-price"><strong>Toplam:</strong> ₺${calculateTotal(order.items).toFixed(2)}</div>
+                `;
 
                 const orderList = document.createElement('div');
                 order.items.forEach((item, itemIndex) => {
-                    const orderItem = document.createElement('div');
-                    orderItem.classList.add('order-item');
-                    orderItem.innerHTML = `
-                        <span>${item.name} (${item.quantity} adet)</span>
-                        <span>₺${(item.price * item.quantity).toFixed(2)}</span>
-                    `;
-
-                    const quantityControl = document.createElement('div');
-                    quantityControl.classList.add('quantity-control');
-
-                    const minusButton = document.createElement('button');
-                    minusButton.classList.add('btn', 'btn-danger');
-                    minusButton.textContent = '-';
-                    minusButton.onclick = () => decreaseQuantity(quantityDisplay);
-
-                    const quantityDisplay = document.createElement('span');
-                    quantityDisplay.classList.add('quantity');
-                    quantityDisplay.textContent = 1;
-
-                    const plusButton = document.createElement('button');
-                    plusButton.classList.add('btn', 'btn-primary');
-                    plusButton.textContent = '+';
-                    plusButton.onclick = () => increaseQuantity(quantityDisplay, item.quantity);
-
-                    const payButton = document.createElement('button');
-                    payButton.classList.add('btn', 'btn-secondary');
-                    payButton.textContent = 'Öde';
-                    payButton.onclick = () => markAsPaid(index, itemIndex, parseInt(quantityDisplay.textContent));
-
-                    quantityControl.appendChild(minusButton);
-                    quantityControl.appendChild(quantityDisplay);
-                    quantityControl.appendChild(plusButton);
-                    quantityControl.appendChild(payButton);
-
-                    orderItem.appendChild(quantityControl);
+                    const orderItem = createOrderItem(order, index, item, itemIndex);
                     orderList.appendChild(orderItem);
                 });
                 card.appendChild(orderList);
 
                 if (order.paidItems.length > 0) {
-                    const paidOrders = document.createElement('div');
-                    paidOrders.classList.add('paid-orders');
-                    paidOrders.innerHTML = '<strong>Ödenenler:</strong>';
-                    order.paidItems.forEach(item => {
-                        const paidItem = document.createElement('div');
-                        paidItem.textContent = `${item.name} (${item.quantity} adet) - ₺${(item.price * item.quantity).toFixed(2)}`;
-                        paidOrders.appendChild(paidItem);
-                    });
+                    const paidOrders = createPaidOrders(order);
                     card.appendChild(paidOrders);
                 }
 
@@ -261,12 +173,7 @@
                     const deleteButton = document.createElement('button');
                     deleteButton.classList.add('btn-delete');
                     deleteButton.textContent = 'Masayı Sil';
-                    deleteButton.onclick = () => {
-                        const deletedTables = getDeletedTables();
-                        deletedTables.push(order.tableNumber); // Silinen masayı kaydet
-                        setDeletedTables(deletedTables); // LocalStorage'ı güncelle
-                        fetchOrders(); // Masaları yeniden yükle
-                    };
+                    deleteButton.onclick = () => deleteTable(order.tableNumber);
                     card.appendChild(deleteButton);
                 }
 
@@ -274,30 +181,108 @@
             });
         }
 
-        function increaseQuantity(display, maxQuantity) {
-            const currentQuantity = parseInt(display.textContent);
-            if (currentQuantity < maxQuantity) {
-                display.textContent = currentQuantity + 1;
-            }
+        function createOrderItem(order, orderIndex, item, itemIndex) {
+    const orderItem = document.createElement('div');
+    orderItem.classList.add('order-item');
+    orderItem.innerHTML = `
+        <span>${item.name} (${item.quantity} adet)</span>
+        <span>₺${(item.price * item.quantity).toFixed(2)}</span>
+    `;
+
+    const quantityControl = document.createElement('div');
+    quantityControl.classList.add('quantity-control');
+
+    // Başlangıç miktarı 1 olacak şekilde ayarlanır
+    const quantityDisplay = document.createElement('span');
+    quantityDisplay.classList.add('quantity');
+    quantityDisplay.textContent = 1;
+
+    // Azalt butonu
+    const minusButton = document.createElement('button');
+    minusButton.classList.add('btn', 'btn-danger');
+    minusButton.textContent = '-';
+    minusButton.onclick = () => {
+        const currentQuantity = parseInt(quantityDisplay.textContent);
+        if (currentQuantity > 1) {
+            quantityDisplay.textContent = currentQuantity - 1;
+        }
+    };
+
+    // Artır butonu
+    const plusButton = document.createElement('button');
+    plusButton.classList.add('btn', 'btn-primary');
+    plusButton.textContent = '+';
+    plusButton.onclick = () => {
+        const currentQuantity = parseInt(quantityDisplay.textContent);
+        if (currentQuantity < item.quantity) {
+            quantityDisplay.textContent = currentQuantity + 1;
+        }
+    };
+
+    // Öde butonu
+    const payButton = document.createElement('button');
+    payButton.classList.add('btn', 'btn-secondary');
+    payButton.textContent = 'Öde';
+    payButton.onclick = () => {
+        const selectedQuantity = parseInt(quantityDisplay.textContent);
+        markAsPaid(orderIndex, itemIndex, selectedQuantity);
+    };
+
+    // Kontrolleri birleştir
+    quantityControl.append(minusButton, quantityDisplay, plusButton, payButton);
+    orderItem.appendChild(quantityControl);
+
+    return orderItem;
+}
+
+
+        function createPaidOrders(order) {
+            const paidOrders = document.createElement('div');
+            paidOrders.classList.add('paid-orders');
+            paidOrders.innerHTML = '<strong>Ödenenler:</strong>';
+
+            order.paidItems.forEach(item => {
+                const paidItem = document.createElement('div');
+                paidItem.classList.add('paid-item');
+                paidItem.textContent = `${item.name} (${item.quantity} adet) - ₺${(item.price * item.quantity).toFixed(2)}`;
+                paidOrders.appendChild(paidItem);
+            });
+
+            return paidOrders;
         }
 
-        function decreaseQuantity(display) {
-            const currentQuantity = parseInt(display.textContent);
-            if (currentQuantity > 1) {
-                display.textContent = currentQuantity - 1;
-            }
+        function createButton(text, className, onClick) {
+            const button = document.createElement('button');
+            button.textContent = text;
+            button.classList.add('btn', className);
+            button.onclick = onClick;
+            return button;
         }
 
-        function markAsPaid(orderIndex, itemIndex, selectedQuantity) {
+        function createSpan(text, className) {
+            const span = document.createElement('span');
+            span.textContent = text;
+            span.classList.add(className);
+            return span;
+        }
+
+        function changeQuantity(item, itemIndex, orderIndex, delta) {
+            const order = orders[orderIndex];
+            item.quantity += delta;
+            if (item.quantity <= 0) {
+                order.items.splice(itemIndex, 1);
+            }
+            displayOrders();
+        }
+
+        function markAsPaid(orderIndex, itemIndex, quantity) {
             const order = orders[orderIndex];
             const item = order.items[itemIndex];
 
-            const paidItem = {
-                ...item,
-                quantity: selectedQuantity
-            };
+            if (quantity > item.quantity) return;
 
-            item.quantity -= selectedQuantity;
+            const paidItem = { ...item, quantity };
+            item.quantity -= quantity;
 
             if (item.quantity === 0) {
                 order.items.splice(itemIndex, 1);
@@ -305,6 +290,29 @@
 
             order.paidItems.push(paidItem);
             displayOrders();
+        }
+
+        function calculateTotal(items) {
+            return items.reduce((total, item) => total + item.price * item.quantity, 0);
+        }
+
+        async function deleteTable(tableNumber) {
+            try {
+                const response = await fetch(DELETE_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table_number: tableNumber })
+                });
+
+                if (response.ok) {
+                    orders = orders.filter(order => order.tableNumber !== tableNumber);
+                    displayOrders();
+                } else {
+                    console.error(`Masa ${tableNumber} silinemedi.`);
+                }
+            } catch (error) {
+                console.error(`Masa ${tableNumber} silinirken hata oluştu:`, error);
+            }
         }
 
         fetchOrders();
