@@ -22,6 +22,9 @@
                         <a class="nav-link" href="{{ url_for('manage_orders') }}">Siparişleri Yönet</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('manage_tables') }}">Masaları Yönet</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin_login') }}">Çıkış Yap</a>
                     </li>
                 </ul>
@@ -32,11 +35,14 @@
         <h1>Yönetici Paneline Hoş Geldiniz</h1>
         <p class="lead">Kafenizi kolaylıkla yönetin.</p>
         <div class="row mt-4">
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <a href="{{ url_for('manage_menu') }}" class="btn btn-primary btn-lg w-100">Menüyü Yönet</a>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <a href="{{ url_for('manage_orders') }}" class="btn btn-secondary btn-lg w-100">Siparişleri Yönet</a>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('manage_tables') }}" class="btn btn-success btn-lg w-100">Masaları Yönet</a>
             </div>
         </div>
     </div>

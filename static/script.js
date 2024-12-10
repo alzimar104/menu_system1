@@ -1,22 +1,62 @@
 document.addEventListener("DOMContentLoaded", function () {
     let cart = {};
 
-    // Artı ve Eksi Butonları
-    document.querySelectorAll(".increase").forEach(button => {
-        button.addEventListener("click", function () {
-            let quantityInput = this.previousElementSibling;
-            quantityInput.value = parseInt(quantityInput.value) + 1;
-        });
-    });
-
-    document.querySelectorAll(".decrease").forEach(button => {
-        button.addEventListener("click", function () {
-            let quantityInput = this.nextElementSibling;
-            if (parseInt(quantityInput.value) > 1) {
-                quantityInput.value = parseInt(quantityInput.value) - 1;
+    // Sipariş ödemesini işaretleme
+    function markAsPaid(orderId, productName) {
+        fetch('/update_order_status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order_id: orderId, product_name: productName })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert("Hata: " + data.message);
             }
-        });
-    });
+        })
+        .catch(error => console.error("Hata:", error));
+    }
+
+    // Masayı silme
+    function deleteTable(orderId) {
+        if (confirm('Bu masayı silmek istediğinize emin misiniz?')) {
+            fetch(`/delete_table/${orderId}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Masa başarıyla silindi!");
+                    location.reload();
+                } else {
+                    alert("Hata: " + data.message);
+                }
+            })
+            .catch(error => console.error("Hata:", error));
+        }
+    }
+
+    // Sipariş miktarını artırma/azaltma
+    function updateQuantity(orderId, productName, change) {
+        fetch('/update_quantity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order_id: orderId, product_name: productName, change: change })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert("Hata: " + data.message);
+            }
+        })
+        .catch(error => console.error("Hata:", error));
+    }
 
     // Sepete Ekle Butonu
     document.querySelectorAll(".add-to-cart").forEach(button => {
@@ -98,4 +138,3 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
-

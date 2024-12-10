@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masalar Yönetimi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .table-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .table-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            background-color: #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .table-card:hover {
+            transform: scale(1.05);
+        }
+
+        .table-header {
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 18px;
+            color: #007bff;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 5px 10px;
+            margin: 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: #fff;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: #fff;
+        }
+
+        .btn-delete {
+            background-color: #ff6347;
+            color: white;
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            margin-top: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .quantity-control {
+            display: flex;
+            align-items: center;
+        }
+
+        .quantity {
+            margin: 0 10px;
+            font-weight: bold;
+        }
+
+        .paid-orders {
+            margin-top: 10px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .total-price {
+            text-align: right;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Masalar Yönetimi</h1>
+
+    <div class="table-grid" id="orders-container">
+        <!-- Masalar burada oluşturulacak -->
+    </div>
+
+    <script>
+        let orders = [];
+
+        const ordersContainer = document.getElementById('orders-container');
+
+        // Silinen masaların IDsini tutan localStorage key'i
+        const DELETED_TABLES_KEY = "deletedTables";
+
+        // LocalStorage'den silinen masaları al
+        function getDeletedTables() {
+            const data = localStorage.getItem(DELETED_TABLES_KEY);
+            return data ? JSON.parse(data) : [];
+        }
+
+        // LocalStorage'de silinen masaları güncelle
+        function setDeletedTables(deletedTables) {
+            localStorage.setItem(DELETED_TABLES_KEY, JSON.stringify(deletedTables));
+        }
+
+        async function fetchOrders() {
+            try {
+                const response = await fetch('/api/completed_orders');
+                const completedOrders = await response.json();
+
+                const deletedTables = getDeletedTables();
+
+                // Aynı masaya ait siparişleri birleştir
+                const groupedOrders = completedOrders.reduce((acc, order) => {
+                    const existingTable = acc.find(o => o.tableNumber === order.table_number);
+                    if (existingTable) {
+                        existingTable.items.push(...order.details.map(item => ({
+                            name: item.name,
+                            price: item.price,
+                            quantity: item.quantity
+                        })));
+                    } else {
+                        acc.push({
+                            id: order.id,
+                            tableNumber: order.table_number,
+                            items: order.details.map(item => ({
+                                name: item.name,
+                                price: item.price,
+                                quantity: item.quantity
+                            })),
+                            paidItems: []
+                        });
+                    }
+                    return acc;
+                }, []);
+
+                orders = groupedOrders
+                    .filter(order => !deletedTables.includes(order.tableNumber)) // Silinen masaları filtrele
+                    .map(order => ({
+                        id: order.id,
+                        tableNumber: order.tableNumber,
+                        items: order.items,
+                        paidItems: []
+                    }));
+
+                displayOrders();
+            } catch (error) {
+                console.error('Siparişler alınırken bir hata oluştu:', error);
+            }
+        }
+
+        function displayOrders() {
+            ordersContainer.innerHTML = '';
+            orders.forEach((order, index) => {
+                const card = document.createElement('div');
+                card.classList.add('table-card');
+                card.setAttribute('data-index', index);
+
+                const header = document.createElement('div');
+                header.classList.add('table-header');
+                header.textContent = `Masa ${order.tableNumber}`;
+                card.appendChild(header);
+
+                const totalElement = document.createElement('div');
+                totalElement.classList.add('total-price');
+                const total = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                totalElement.innerHTML = `<strong>Toplam:</strong> ₺${total.toFixed(2)}`;
+                card.appendChild(totalElement);
+
+                const orderList = document.createElement('div');
+                order.items.forEach((item, itemIndex) => {
+                    const orderItem = document.createElement('div');
+                    orderItem.classList.add('order-item');
+                    orderItem.innerHTML = `
+                        <span>${item.name} (${item.quantity} adet)</span>
+                        <span>₺${(item.price * item.quantity).toFixed(2)}</span>
+                    `;
+
+                    const quantityControl = document.createElement('div');
+                    quantityControl.classList.add('quantity-control');
+
+                    const minusButton = document.createElement('button');
+                    minusButton.classList.add('btn', 'btn-danger');
+                    minusButton.textContent = '-';
+                    minusButton.onclick = () => decreaseQuantity(quantityDisplay);
+
+                    const quantityDisplay = document.createElement('span');
+                    quantityDisplay.classList.add('quantity');
+                    quantityDisplay.textContent = 1;
+
+                    const plusButton = document.createElement('button');
+                    plusButton.classList.add('btn', 'btn-primary');
+                    plusButton.textContent = '+';
+                    plusButton.onclick = () => increaseQuantity(quantityDisplay, item.quantity);
+
+                    const payButton = document.createElement('button');
+                    payButton.classList.add('btn', 'btn-secondary');
+                    payButton.textContent = 'Öde';
+                    payButton.onclick = () => markAsPaid(index, itemIndex, parseInt(quantityDisplay.textContent));
+
+                    quantityControl.appendChild(minusButton);
+                    quantityControl.appendChild(quantityDisplay);
+                    quantityControl.appendChild(plusButton);
+                    quantityControl.appendChild(payButton);
+
+                    orderItem.appendChild(quantityControl);
+                    orderList.appendChild(orderItem);
+                });
+                card.appendChild(orderList);
+
+                if (order.paidItems.length > 0) {
+                    const paidOrders = document.createElement('div');
+                    paidOrders.classList.add('paid-orders');
+                    paidOrders.innerHTML = '<strong>Ödenenler:</strong>';
+                    order.paidItems.forEach(item => {
+                        const paidItem = document.createElement('div');
+                        paidItem.textContent = `${item.name} (${item.quantity} adet) - ₺${(item.price * item.quantity).toFixed(2)}`;
+                        paidOrders.appendChild(paidItem);
+                    });
+                    card.appendChild(paidOrders);
+                }
+
+                if (order.items.length === 0) {
+                    const deleteButton = document.createElement('button');
+                    deleteButton.classList.add('btn-delete');
+                    deleteButton.textContent = 'Masayı Sil';
+                    deleteButton.onclick = () => {
+                        const deletedTables = getDeletedTables();
+                        deletedTables.push(order.tableNumber); // Silinen masayı kaydet
+                        setDeletedTables(deletedTables); // LocalStorage'ı güncelle
+                        fetchOrders(); // Masaları yeniden yükle
+                    };
+                    card.appendChild(deleteButton);
+                }
+
+                ordersContainer.appendChild(card);
+            });
+        }
+
+        function increaseQuantity(display, maxQuantity) {
+            const currentQuantity = parseInt(display.textContent);
+            if (currentQuantity < maxQuantity) {
+                display.textContent = currentQuantity + 1;
+            }
+        }
+
+        function decreaseQuantity(display) {
+            const currentQuantity = parseInt(display.textContent);
+            if (currentQuantity > 1) {
+                display.textContent = currentQuantity - 1;
+            }
+        }
+
+        function markAsPaid(orderIndex, itemIndex, selectedQuantity) {
+            const order = orders[orderIndex];
+            const item = order.items[itemIndex];
+
+            const paidItem = {
+                ...item,
+                quantity: selectedQuantity
+            };
+
+            item.quantity -= selectedQuantity;
+
+            if (item.quantity === 0) {
+                order.items.splice(itemIndex, 1);
+            }
+
+            order.paidItems.push(paidItem);
+            displayOrders();
+        }
+
+        fetchOrders();
+    </script>
+</body>
+</html>
