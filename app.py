@@ -279,17 +279,6 @@ def get_orders():
     orders = get_all_orders()  # Veritabanınızdan tüm siparişleri döndürür
     return jsonify(orders)
 
-@app.route('/api/tables')
-def get_tables():
-    # Tüm masaları çek (örneğin, sipariş durumlarına göre)
-    tables = db.session.query(Order.table_number).distinct().all()
-    occupied_tables = [t[0] for t in tables]
-
-    # Masa durumlarını oluştur (örnek olarak 1-10 arasında masa numaraları)
-    all_tables = [{"table_number": i, "status": "Dolu" if i in occupied_tables else "Boş"} for i in range(1, 11)]
-
-    return jsonify(all_tables)
-
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()

@@ -317,35 +317,5 @@
 
         fetchOrders();
     </script>
-    <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        setInterval(fetchTables, 5000); // 5 saniyede bir masaları güncelle
-        fetchTables(); // Sayfa yüklendiğinde bir kez çağır
-    });
-
-    function fetchTables() {
-        fetch('/api/tables') // API rotasını çağır
-            .then(response => response.json())
-            .then(data => updateTableStatus(data))
-            .catch(error => console.error('Hata:', error));
-    }
-
-    function updateTableStatus(tables) {
-        const tbody = document.querySelector('table tbody');
-        tbody.innerHTML = ''; // Mevcut tabloyu temizle
-
-        tables.forEach(table => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${table.table_number}</td>
-                <td>
-                    ${table.status === "Dolu" ? '<span class="badge bg-warning">Dolu</span>' : '<span class="badge bg-success">Boş</span>'}
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-    }
-</script>
-
 </body>
 </html>
