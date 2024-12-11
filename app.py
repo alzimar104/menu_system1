@@ -273,6 +273,28 @@ def delete_table():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Hata oluştu: {str(e)}"}), 500
+    
+@app.route('/api/mark_as_paid', methods=['POST'])
+def mark_as_paid():
+    data = request.json
+    table_number = data.get('table_number')
+    item_name = data.get('item_name')
+    quantity = data.get('quantity')
+
+    # Sipariş veritabanını güncelle (örnek olarak dict kullanılıyor)
+    for order in order:
+        if order['table_number'] == table_number:
+            for item in order['details']:
+                if item['name'] == item_name:
+                    if item['quantity'] >= quantity:
+                        item['quantity'] -= quantity
+                        # Ödenen miktarı kaydedin veya ayrı bir yere ekleyin
+                        return jsonify({"message": "Ödeme başarıyla işlendi"}), 200
+                    else:
+                        return jsonify({"error": "Yetersiz miktar"}), 400
+
+    return jsonify({"error": "Masa veya ürün bulunamadı"}), 404
+
 
 @app.route('/api/orders')
 def get_orders():

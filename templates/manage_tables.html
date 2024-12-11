@@ -182,59 +182,53 @@
         }
 
         function createOrderItem(order, orderIndex, item, itemIndex) {
-    const orderItem = document.createElement('div');
-    orderItem.classList.add('order-item');
-    orderItem.innerHTML = `
-        <span>${item.name} (${item.quantity} adet)</span>
-        <span>₺${(item.price * item.quantity).toFixed(2)}</span>
-    `;
+            const orderItem = document.createElement('div');
+            orderItem.classList.add('order-item');
+            orderItem.innerHTML = `
+                <span>${item.name} (${item.quantity} adet)</span>
+                <span>₺${(item.price * item.quantity).toFixed(2)}</span>
+            `;
 
-    const quantityControl = document.createElement('div');
-    quantityControl.classList.add('quantity-control');
+            const quantityControl = document.createElement('div');
+            quantityControl.classList.add('quantity-control');
 
-    // Başlangıç miktarı 1 olacak şekilde ayarlanır
-    const quantityDisplay = document.createElement('span');
-    quantityDisplay.classList.add('quantity');
-    quantityDisplay.textContent = 1;
+            const quantityDisplay = document.createElement('span');
+            quantityDisplay.classList.add('quantity');
+            quantityDisplay.textContent = 1;
 
-    // Azalt butonu
-    const minusButton = document.createElement('button');
-    minusButton.classList.add('btn', 'btn-danger');
-    minusButton.textContent = '-';
-    minusButton.onclick = () => {
-        const currentQuantity = parseInt(quantityDisplay.textContent);
-        if (currentQuantity > 1) {
-            quantityDisplay.textContent = currentQuantity - 1;
+            const minusButton = document.createElement('button');
+            minusButton.classList.add('btn', 'btn-danger');
+            minusButton.textContent = '-';
+            minusButton.onclick = () => {
+                const currentQuantity = parseInt(quantityDisplay.textContent);
+                if (currentQuantity > 1) {
+                    quantityDisplay.textContent = currentQuantity - 1;
+                }
+            };
+
+            const plusButton = document.createElement('button');
+            plusButton.classList.add('btn', 'btn-primary');
+            plusButton.textContent = '+';
+            plusButton.onclick = () => {
+                const currentQuantity = parseInt(quantityDisplay.textContent);
+                if (currentQuantity < item.quantity) {
+                    quantityDisplay.textContent = currentQuantity + 1;
+                }
+            };
+
+            const payButton = document.createElement('button');
+            payButton.classList.add('btn', 'btn-secondary');
+            payButton.textContent = 'Öde';
+            payButton.onclick = () => {
+                const selectedQuantity = parseInt(quantityDisplay.textContent);
+                markAsPaid(orderIndex, itemIndex, selectedQuantity);
+            };
+
+            quantityControl.append(minusButton, quantityDisplay, plusButton, payButton);
+            orderItem.appendChild(quantityControl);
+
+            return orderItem;
         }
-    };
-
-    // Artır butonu
-    const plusButton = document.createElement('button');
-    plusButton.classList.add('btn', 'btn-primary');
-    plusButton.textContent = '+';
-    plusButton.onclick = () => {
-        const currentQuantity = parseInt(quantityDisplay.textContent);
-        if (currentQuantity < item.quantity) {
-            quantityDisplay.textContent = currentQuantity + 1;
-        }
-    };
-
-    // Öde butonu
-    const payButton = document.createElement('button');
-    payButton.classList.add('btn', 'btn-secondary');
-    payButton.textContent = 'Öde';
-    payButton.onclick = () => {
-        const selectedQuantity = parseInt(quantityDisplay.textContent);
-        markAsPaid(orderIndex, itemIndex, selectedQuantity);
-    };
-
-    // Kontrolleri birleştir
-    quantityControl.append(minusButton, quantityDisplay, plusButton, payButton);
-    orderItem.appendChild(quantityControl);
-
-    return orderItem;
-}
-
 
         function createPaidOrders(order) {
             const paidOrders = document.createElement('div');
@@ -249,30 +243,6 @@
             });
 
             return paidOrders;
-        }
-
-        function createButton(text, className, onClick) {
-            const button = document.createElement('button');
-            button.textContent = text;
-            button.classList.add('btn', className);
-            button.onclick = onClick;
-            return button;
-        }
-
-        function createSpan(text, className) {
-            const span = document.createElement('span');
-            span.textContent = text;
-            span.classList.add(className);
-            return span;
-        }
-
-        function changeQuantity(item, itemIndex, orderIndex, delta) {
-            const order = orders[orderIndex];
-            item.quantity += delta;
-            if (item.quantity <= 0) {
-                order.items.splice(itemIndex, 1);
-            }
-            displayOrders();
         }
 
         function markAsPaid(orderIndex, itemIndex, quantity) {
@@ -315,7 +285,11 @@
             }
         }
 
-        fetchOrders();
+        setInterval(fetchOrders, 5000); // Her 5 saniyede bir siparişleri güncelle
+
+        fetchOrders(); // Sayfa yüklenir yüklenmez siparişleri getir
+
+        
     </script>
 </body>
 </html>
