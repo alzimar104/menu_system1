@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import json
@@ -8,6 +9,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///restaurant.db'
 app.config['SECRET_KEY'] = 'secret_key_here'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
+
 
 # Veritabanı Modelleri
 class Menu(db.Model):
@@ -41,6 +44,28 @@ class CompletedOrder(db.Model):
     details = db.Column(db.JSON, nullable=False)
     total_price = db.Column(db.Float, nullable=False)
     completed_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+
+
+def get_all_orders():
+    # Siparişleri veritabanından çek
+    orders = Order.query.order_by(Order.id.desc()).all()
+    order_list = []
+
+    # Siparişleri düzenle
+    for order in orders:
+        if isinstance(order.details, str):
+            order.details = json.loads(order.details)  # Detayları JSON formatına dönüştür
+        order_list.append({
+            'id': order.id,
+            'table_number': order.table_number,
+            'details': order.details,
+            'status': order.status,
+            'total_price': order.total_price
+        })
+
+    return order_list
+
 
 @app.route('/')
 def index():
@@ -249,6 +274,21 @@ def delete_table():
         db.session.rollback()
         return jsonify({"error": f"Hata oluştu: {str(e)}"}), 500
 
+@app.route('/api/orders')
+def get_orders():
+    orders = get_all_orders()  # Veritabanınızdan tüm siparişleri döndürür
+    return jsonify(orders)
+
+@app.route('/api/tables')
+def get_tables():
+    # Tüm masaları çek (örneğin, sipariş durumlarına göre)
+    tables = db.session.query(Order.table_number).distinct().all()
+    occupied_tables = [t[0] for t in tables]
+
+    # Masa durumlarını oluştur (örnek olarak 1-10 arasında masa numaraları)
+    all_tables = [{"table_number": i, "status": "Dolu" if i in occupied_tables else "Boş"} for i in range(1, 11)]
+
+    return jsonify(all_tables)
 
 if __name__ == '__main__':
     with app.app_context():
