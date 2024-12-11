@@ -10,10 +10,18 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # Veritabanı Modelleri
+class Menu(db.Model):
+    __tablename__ = 'menus'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    items = db.relationship('MenuItem', backref='menu', lazy=True)
+
 class MenuItem(db.Model):
+    __tablename__ = 'menu_items'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
+    menu_id = db.Column(db.Integer, db.ForeignKey('menus.id'), nullable=False)
 
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -53,17 +61,25 @@ def admin_login():
 
 @app.route('/menu')
 def show_menu():
-    menu_items = MenuItem.query.all()
-    return render_template('sicak-icecekler.html', menu_items=menu_items)  # Burada sicak-icecekler.html sayfası gösteriliyor.
+    menus = Menu.query.all()  # Tüm menüleri getir
+    return render_template('index.html', menus=menus)
+
 
 @app.route('/admin/home')
 def admin_home():
     return render_template('admin_home.html')
 
-@app.route('/manage_menu')
+@app.route('/manage_menu', methods=['GET'])
 def manage_menu():
-    menu_items = MenuItem.query.all()
-    return render_template('manage_menu.html', menu_items=menu_items)
+    filter_menu_id = request.args.get('filter_menu_id')
+    if filter_menu_id:
+        menu_items = MenuItem.query.filter_by(menu_id=filter_menu_id).all()
+    else:
+        menu_items = MenuItem.query.all()
+
+    menus = Menu.query.all()
+    return render_template('manage_menu.html', menu_items=menu_items, menus=menus)
+
 
 @app.route('/manage_tables')
 def manage_tables():
@@ -71,16 +87,25 @@ def manage_tables():
 
 @app.route('/add_menu_item', methods=['POST'])
 def add_menu_item():
-    name = request.form.get('name')
-    price = request.form.get('price')
-    if not name or not price:
-        flash('Ürün adı ve fiyatı zorunludur.', 'danger')
-        return redirect(url_for('manage_menu'))
-    new_item = MenuItem(name=name, price=float(price))
+    name = request.form['name']
+    price = request.form['price']
+    menu_id = request.form['menu_id']
+    # Menü öğesini veritabanına ekle
+    new_item = MenuItem(name=name, price=price, menu_id=menu_id)
     db.session.add(new_item)
     db.session.commit()
-    flash('Yeni ürün başarıyla eklendi!', 'success')
     return redirect(url_for('manage_menu'))
+
+@app.route('/initialize_menus')
+def initialize_menus():
+    menus = ["Sıcak İçecekler", "Soğuk İçecekler", "Tatlılar"]
+    for menu_name in menus:
+        if not Menu.query.filter_by(name=menu_name).first():
+            new_menu = Menu(name=menu_name)
+            db.session.add(new_menu)
+    db.session.commit()
+    return "Menüler başarıyla oluşturuldu!"
+
 
 @app.route('/delete_menu_item/<int:item_id>')
 def delete_menu_item(item_id):
@@ -121,6 +146,23 @@ def complete_order(order_id):
         flash(f'Sipariş tamamlanırken bir hata oluştu: {str(e)}', 'danger')
 
     return redirect(url_for('manage_orders'))
+
+@app.route('/sicak-icecekler')
+def sicak_icecekler():
+    # SQLAlchemy kullanarak menu_id = 1 olanları al
+    menu_items = MenuItem.query.filter_by(menu_id=1).all()
+    return render_template('sicak-icecekler.html', menu_items=menu_items)
+
+@app.route('/soguk-icecekler')
+def soguk_icecekler():
+    menu_items = MenuItem.query.filter_by(menu_id=2).all()
+    return render_template('soguk-icecekler.html', menu_items=menu_items)
+
+@app.route('/tatlilar')
+def tatlilar():
+    menu_items = MenuItem.query.filter_by(menu_id=3).all()
+    return render_template('tatlilar.html', menu_items=menu_items)
+
 
 @app.route('/cancel_order/<int:order_id>')
 def cancel_order(order_id):

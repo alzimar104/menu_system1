@@ -8,7 +8,43 @@
 </head>
 <body>
     <div class="container mt-5">
-        <h1>Menü Yönetimi</h1>
+        <div class="d-flex justify-content-between align-items-center">
+            <h1>Menü Yönetimi</h1>
+            <a href="{{ url_for('admin_home') }}" class="btn btn-secondary">Geri Dön</a>
+        </div>
+
+        <!-- Yeni Menü Öğesi Ekleme Formu -->
+        <form action="{{ url_for('add_menu_item') }}" method="post">
+            <div class="mb-3">
+                <label for="name" class="form-label">Ürün Adı</label>
+                <input type="text" name="name" id="name" class="form-control" placeholder="Ürün Adı" required>
+            </div>
+            <div class="mb-3">
+                <label for="price" class="form-label">Fiyat</label>
+                <input type="number" step="0.01" name="price" id="price" class="form-control" placeholder="Fiyat" required>
+            </div>
+            <div class="mb-3">
+                <label for="menu_id" class="form-label">Menü Seçin</label>
+                <select name="menu_id" id="menu_id" class="form-select" required>
+                    <option value="" disabled selected>Menü Seçin</option>
+                    {% for menu in menus %}
+                    <option value="{{ menu.id }}">{{ menu.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-success">Ekle</button>
+        </form>
+
+        <!-- Menü Bazlı Filtreleme Formu -->
+        <form method="get" action="{{ url_for('manage_menu') }}" class="mt-4">
+            <select name="filter_menu_id" class="form-select w-25 d-inline-block">
+                <option value="">Tüm Menüler</option>
+                {% for menu in menus %}
+                <option value="{{ menu.id }}">{{ menu.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">Filtrele</button>
+        </form>
 
         <!-- Menü Öğeleri Tablosu -->
         <table class="table table-striped mt-4">
@@ -17,6 +53,7 @@
                     <th>#</th>
                     <th>Ürün Adı</th>
                     <th>Fiyat</th>
+                    <th>Menü</th>
                     <th>İşlemler</th>
                 </tr>
             </thead>
@@ -26,6 +63,7 @@
                     <td>{{ item.id }}</td>
                     <td>{{ item.name }}</td>
                     <td>{{ item.price }} TL</td>
+                    <td>{{ item.menu.name if item.menu else "Belirtilmemiş" }}</td>
                     <td>
                         <a href="{{ url_for('delete_menu_item', item_id=item.id) }}" class="btn btn-danger btn-sm">Sil</a>
                     </td>
@@ -33,21 +71,6 @@
                 {% endfor %}
             </tbody>
         </table>
-
-        <!-- Yeni Menü Öğesi Ekleme Formu -->
-        <h2>Yeni Menü Öğesi Ekle</h2>
-        <form action="{{ url_for('add_menu_item') }}" method="post">
-            <div class="mb-3">
-                <input type="text" name="name" class="form-control" placeholder="Ürün Adı" required>
-            </div>
-            <div class="mb-3">
-                <input type="number" step="0.01" name="price" class="form-control" placeholder="Fiyat" required>
-            </div>
-            <button type="submit" class="btn btn-success">Ekle</button>
-        </form>
-
-        <!-- Admin Ana Sayfasına Geri Dön -->
-        <a href="{{ url_for('admin_home') }}" class="btn btn-secondary mt-3">Geri Dön</a>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
