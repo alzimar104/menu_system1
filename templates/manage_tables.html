@@ -129,11 +129,13 @@
                         grouped.push(table);
                     }
 
-                    table.items.push(...order.details.map(item => ({
-                        name: item.name,
-                        price: item.price,
-                        quantity: item.quantity
-                    })));
+                    order.details.forEach(item => {
+                        table.items.push({
+                            name: item.name,
+                            price: item.price,
+                            quantity: item.quantity
+                        });
+                    });
 
                     return grouped;
                 }, []);
@@ -245,25 +247,38 @@
             return paidOrders;
         }
 
-        function markAsPaid(orderIndex, itemIndex, quantity) {
+        async function markAsPaid(orderIndex, itemIndex, quantity) {
             const order = orders[orderIndex];
             const item = order.items[itemIndex];
 
             if (quantity > item.quantity) return;
 
-            const paidItem = { ...item, quantity };
-            item.quantity -= quantity;
+            try {
+                const response = await fetch('/api/mark_as_paid', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table_number: order.tableNumber,
+                        item_name: item.name,
+                        quantity: quantity
+                    })
+                });
 
-            if (item.quantity === 0) {
-                order.items.splice(itemIndex, 1);
+                if (response.ok) {
+                    item.quantity -= quantity;
+
+                    if (item.quantity === 0) {
+                        order.items.splice(itemIndex, 1);
+                    }
+
+                    order.paidItems.push({ ...item, quantity });
+                    displayOrders();
+                } else {
+                    console.error('Ödeme işlenemedi:', await response.json());
+                }
+            } catch (error) {
+                console.error('Ödeme API çağrısı sırasında hata:', error);
             }
-
-            order.paidItems.push(paidItem);
-            displayOrders();
-        }
-
-        function calculateTotal(items) {
-            return items.reduce((total, item) => total + item.price * item.quantity, 0);
         }
 
         async function deleteTable(tableNumber) {
@@ -285,11 +300,13 @@
             }
         }
 
+        function calculateTotal(items) {
+            return items.reduce((total, item) => total + item.price * item.quantity, 0);
+        }
+
         setInterval(fetchOrders, 5000); // Her 5 saniyede bir siparişleri güncelle
 
         fetchOrders(); // Sayfa yüklenir yüklenmez siparişleri getir
-
-        
     </script>
 </body>
 </html>
