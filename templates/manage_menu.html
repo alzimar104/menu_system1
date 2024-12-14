@@ -14,7 +14,7 @@
         </div>
 
         <!-- Yeni Menü Öğesi Ekleme Formu -->
-        <form action="{{ url_for('add_menu_item') }}" method="post">
+        <form action="{{ url_for('add_menu_item') }}" method="post" enctype="multipart/form-data">
             <div class="mb-3">
                 <label for="name" class="form-label">Ürün Adı</label>
                 <input type="text" name="name" id="name" class="form-control" placeholder="Ürün Adı" required>
@@ -22,6 +22,14 @@
             <div class="mb-3">
                 <label for="price" class="form-label">Fiyat</label>
                 <input type="number" step="0.01" name="price" id="price" class="form-control" placeholder="Fiyat" required>
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">Açıklama</label>
+                <textarea name="description" id="description" class="form-control" placeholder="Ürünle ilgili açıklama" rows="3"></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="image" class="form-label">Resim</label>
+                <input type="file" name="image" id="image" class="form-control" accept="image/*">
             </div>
             <div class="mb-3">
                 <label for="menu_id" class="form-label">Menü Seçin</label>
@@ -51,8 +59,10 @@
             <thead>
                 <tr>
                     <th>#</th>
+                    <th>Resim</th>
                     <th>Ürün Adı</th>
                     <th>Fiyat</th>
+                    <th>Açıklama</th>
                     <th>Menü</th>
                     <th>İşlemler</th>
                 </tr>
@@ -61,10 +71,19 @@
                 {% for item in menu_items %}
                 <tr>
                     <td>{{ item.id }}</td>
+                    <td>
+                        {% if item.image_url %}
+                        <img src="{{ item.image_url }}" alt="{{ item.name }}" style="width: 50px; height: 50px; object-fit: cover;">
+                        {% else %}
+                        Yok
+                        {% endif %}
+                    </td>
                     <td>{{ item.name }}</td>
                     <td>{{ item.price }} TL</td>
+                    <td>{{ item.description }}</td>
                     <td>{{ item.menu.name if item.menu else "Belirtilmemiş" }}</td>
                     <td>
+                        <a href="#" class="btn btn-warning btn-sm edit-btn" data-id="{{ item.id }}">Düzenle</a>
                         <a href="{{ url_for('delete_menu_item', item_id=item.id) }}" class="btn btn-danger btn-sm">Sil</a>
                     </td>
                 </tr>
@@ -73,6 +92,107 @@
         </table>
     </div>
 
+    <!-- Düzenleme Modal -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Ürün Düzenle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editForm" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="edit-name" class="form-label">Ürün Adı</label>
+                            <input type="text" name="name" id="edit-name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-price" class="form-label">Fiyat</label>
+                            <input type="number" step="0.01" name="price" id="edit-price" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-description" class="form-label">Açıklama</label>
+                            <textarea name="description" id="edit-description" class="form-control"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-image" class="form-label">Resim</label>
+                            <input type="file" name="image" id="edit-image" class="form-control" accept="image/*">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-menu-id" class="form-label">Menü</label>
+                            <select name="menu_id" id="edit-menu-id" class="form-select" required>
+                                <!-- Seçenekler JavaScript ile doldurulacak -->
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+    // Düzenle butonlarına tıklama olayını dinle
+    document.querySelectorAll('.edit-btn').forEach(button => {
+        button.addEventListener('click', function (event) {
+            event.preventDefault();
+            const itemId = this.getAttribute('data-id'); // Ürün ID'sini al
+            fetch(`/get_menu_item/${itemId}`) // Doğru endpoint'e istek gönder
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Ürün bilgileri alınamadı!');
+                    }
+                    return response.json(); // JSON formatında veri al
+                })
+                .then(data => {
+                    // Modal içindeki alanları doldur
+                    document.getElementById('edit-name').value = data.name || '';
+                    document.getElementById('edit-price').value = data.price || '';
+                    document.getElementById('edit-description').value = data.description || '';
+                    document.getElementById('edit-menu-id').innerHTML = data.menus.map(menu => 
+                        `<option value="${menu.id}" ${menu.id == data.menu_id ? 'selected' : ''}>${menu.name}</option>`).join('');
+                    
+                    // Form action'ını ayarla
+                    document.getElementById('editForm').action = `/edit_menu_item/${itemId}`;
+                    
+                    // Modal'ı aç
+                    const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+                    editModal.show();
+                })
+                .catch(error => {
+                    console.error('Hata:', error);
+                    alert('Ürün bilgileri alınırken bir hata oluştu.');
+                });
+        });
+    });
+});
+
+    // Düzenleme formunu gönderme işlemi
+    document.getElementById('editForm').addEventListener('submit', function (event) {
+        event.preventDefault(); // Formun varsayılan gönderimini engelle
+        const formData = new FormData(this);
+        // Fetch ile düzenleme isteği gönder
+        fetch(this.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                alert('Ürün başarıyla güncellendi!');
+                location.reload(); // Sayfayı yenile
+            } else {
+                alert('Güncelleme sırasında bir hata oluştu.');
+            }
+        })
+        .catch(error => {
+            console.error('Hata:', error);
+            alert('Bir hata oluştu.');
+        });
+    });
+
+    </script>
 </body>
 </html>

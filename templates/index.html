@@ -14,21 +14,21 @@
     </header>
     <main class="menu-grid">
         <div class="menu-item">
-            <a href="soguk-icecekler.html">
+            <a href="{{ url_for('soguk_icecekler') }}">
                 <div class="overlay">Soğuk İçecekler</div>
-                <img src="../static/pictures/soguk.jpeg" alt="pictures">
+                <img src="{{ url_for('static', filename='pictures/soguk.jpeg') }}" alt="Soğuk İçecekler">
             </a>
         </div>
         <div class="menu-item">
-            <a href="sicak-icecekler.html">
+            <a href="{{ url_for('sicak_icecekler') }}">
                 <div class="overlay">Sıcak İçecekler</div>
-                <img src="../static/pictures/sıcak.jpg" alt="pictures">
+                <img src="{{ url_for('static', filename='pictures/sıcak.jpg') }}" alt="Sıcak İçecekler">
             </a>
         </div>
         <div class="menu-item">
-            <a href="tatlilar.html">
+            <a href="{{ url_for('tatlilar') }}">
                 <div class="overlay">Tatlılar</div>
-                <img src="../static/pictures/tatli.jpg" alt="pictures">
+                <img src="{{ url_for('static', filename='pictures/tatli.jpg') }}" alt="Tatlılar">
             </a>
         </div>
         <div class="menu-item">
