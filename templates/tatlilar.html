@@ -19,6 +19,7 @@
             align-items: center;
         }
         .modal-content {
+            position: relative;
             background: #fff;
             padding: 20px;
             border-radius: 8px;
@@ -26,6 +27,15 @@
         }
         .modal-content h3 {
             margin: 0;
+        }
+        .modal-content button#close-modal {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
         }
         .success-message {
             display: none;
@@ -55,17 +65,37 @@
         .cart-footer {
             text-align: right;
         }
+        .cart-footer p {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-right: 10px;
+        }
 
-        /* Sepet Fiyatını Sola Kaydırmak için Stil */
+        #total-price {
+            margin-left: 20px;
+            font-weight: bold;
+        }
         .cart-item {
             display: flex;
             justify-content: space-between;
             margin-bottom: 10px;
             padding: 5px;
         }
-
+        #submit-order {
+            background-color: #4caf50;
+            color: white;
+            padding: 12px 25px;
+            font-weight: bold;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        #submit-order:hover {
+            background-color: #45a049;
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+        }
         .cart-item span:nth-child(2) {
-            margin-left: -50px; /* Fiyatı sola kaydırır */
+            margin-left: -50px;
         }
     </style>
 </head>
@@ -113,8 +143,11 @@
     <!-- Modal -->
     <div class="modal" id="modal">
         <div class="modal-content">
+            <button id="close-modal">&times;</button>
             <h3>Masa Numarası Girin</h3>
             <input type="number" id="table-number" placeholder="Masa Numarası" min="1" required>
+            <br><br>
+            <textarea id="order-note" placeholder="Sipariş notu (isteğe bağlı)" rows="4" style="width: 100%;"></textarea>
             <br><br>
             <button id="submit-order">Siparişi Gönder</button>
         </div>
@@ -168,6 +201,19 @@
                 }
                 modal.style.display = 'flex';
             }
+
+            if (event.target.classList.contains('remove-from-cart')) {
+                const index = parseInt(event.target.getAttribute('data-index'));
+                cart.splice(index, 1);
+                updateCart();
+                if (cart.length === 0) {
+                    cartElement.style.display = 'none';
+                }
+            }
+        });
+
+        document.getElementById('close-modal').addEventListener('click', () => {
+            modal.style.display = 'none';
         });
 
         function updateCart() {
@@ -193,6 +239,8 @@
 
         submitOrderButton.addEventListener('click', () => {
             const tableNumber = tableNumberInput.value;
+            const orderNote = document.getElementById('order-note').value;
+
             if (!tableNumber) {
                 alert('Lütfen masa numarasını girin!');
                 return;
@@ -203,7 +251,8 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     table_number: tableNumber,
-                    details: JSON.stringify(cart)
+                    details: JSON.stringify(cart),
+                    note: orderNote
                 })
             })
             .then(response => response.json())

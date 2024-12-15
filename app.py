@@ -1,8 +1,25 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask import jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import json
+import threading
+import webview
+
+
+# Flask sunucusunu ayrı bir iş parçacığında başlatma
+def start_flask_app():
+    app.run(host='127.0.0.1', port=5000, debug=False)
+
+if __name__ == '__main__':
+    # Flask sunucusunu bir iş parçacığında başlat
+    threading.Thread(target=start_flask_app).start()
+    
+    # WebView penceresi oluştur
+    webview.create_window("Masaüstü Uygulaman", "http://127.0.0.1:5000")
+    webview.start()
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///restaurant.db'
@@ -10,21 +27,32 @@ app.config['SECRET_KEY'] = 'secret_key_here'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-
-
 # Veritabanı Modelleri
 class Menu(db.Model):
     __tablename__ = 'menus'
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    items = db.relationship('MenuItem', backref='menu', lazy=True)
+    description = db.Column(db.Text, nullable=True)
+    image_url = db.Column(db.String(200), nullable=True)
+
+    # İlişki tanımı
+    menu_items = db.relationship('MenuItem', back_populates='menu')
+
 
 class MenuItem(db.Model):
     __tablename__ = 'menu_items'
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    image_url = db.Column(db.String(200), nullable=True)
     menu_id = db.Column(db.Integer, db.ForeignKey('menus.id'), nullable=False)
+
+    # İlişki tanımı
+    menu = db.relationship('Menu', back_populates='menu_items')
+
 
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -60,11 +88,13 @@ def get_all_orders():
             'id': order.id,
             'table_number': order.table_number,
             'details': order.details,
+            'description': order.details.get('description', ''),  # Field6 yerine description
             'status': order.status,
             'total_price': order.total_price
         })
 
     return order_list
+
 
 
 @app.route('/')
@@ -103,7 +133,11 @@ def manage_menu():
         menu_items = MenuItem.query.all()
 
     menus = Menu.query.all()
-    return render_template('manage_menu.html', menu_items=menu_items, menus=menus)
+
+    # Örneğin, ilk menü öğesini item olarak tanımlayalım
+    item = menu_items[0] if menu_items else None
+
+    return render_template('manage_menu.html', menu_items=menu_items, menus=menus, item=item)
 
 
 @app.route('/manage_tables')
@@ -139,6 +173,55 @@ def delete_menu_item(item_id):
     db.session.commit()
     flash('Ürün başarıyla silindi!', 'success')
     return redirect(url_for('manage_menu'))
+
+@app.route('/edit_menu_item/<int:item_id>', methods=['GET', 'POST'])
+def edit_menu_item(item_id):
+    item = MenuItem.query.get(item_id)  # MenuItem, modelinizin adı olmalı
+    menus = Menu.query.all()  # Tüm menüleri alıyoruz
+    
+    if not item:
+        flash("Ürün bulunamadı.", "danger")
+        return redirect(url_for('manage_menu'))
+
+    if request.method == 'POST':
+        item.name = request.form['name']
+        item.price = float(request.form['price'])
+        item.description = request.form['description']
+        item.menu_id = int(request.form['menu_id'])
+        
+        # Resim dosyası kontrolü
+        if 'image' in request.files and request.files['image']:
+            image_file = request.files['image']
+            image_filename = secure_filename(image_file.filename) # type: ignore
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
+            image_file.save(image_path)
+            item.image_url = f"/uploads/{image_filename}"  # Veritabanı için URL
+
+        db.session.commit()
+        flash("Ürün başarıyla güncellendi.", "success")
+        return redirect(url_for('manage_menu'))
+
+    return render_template('edit_menu_item.html', item=item, menus=menus)
+
+@app.route('/get_menu_item/<int:item_id>', methods=['GET'])
+def get_menu_item(item_id):
+    # Ürün bilgilerini veritabanından al
+    item = MenuItem.query.get(item_id)
+    if not item:
+        return jsonify({'error': 'Item not found'}), 404
+
+    # Tüm menüleri alın (dropdown için)
+    menus = Menu.query.all()
+
+    # Veriyi JSON formatında döndürün
+    return jsonify({
+        'name': item.name,
+        'price': item.price,
+        'description': item.description,
+        'menu_id': item.menu_id,  # Ürün hangi menüye ait
+        'menus': [{'id': menu.id, 'name': menu.name} for menu in menus]  # Tüm menüler
+    })
+
 
 @app.route('/manage_orders')
 def manage_orders():
