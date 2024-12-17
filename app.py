@@ -4,21 +4,6 @@ from flask import jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import json
-import threading
-import webview
-
-
-# Flask sunucusunu ayrı bir iş parçacığında başlatma
-def start_flask_app():
-    app.run(host='127.0.0.1', port=5000, debug=False)
-
-if __name__ == '__main__':
-    # Flask sunucusunu bir iş parçacığında başlat
-    threading.Thread(target=start_flask_app).start()
-    
-    # WebView penceresi oluştur
-    webview.create_window("Masaüstü Uygulaman", "http://127.0.0.1:5000")
-    webview.start()
 
 
 app = Flask(__name__)
