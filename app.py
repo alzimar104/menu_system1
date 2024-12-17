@@ -341,6 +341,48 @@ def delete_table():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Hata oluştu: {str(e)}"}), 500
+    
+@app.route('/api/mark_as_paid', methods=['POST'])
+def mark_as_paid():
+    data = request.json
+    table_number = data.get('table_number')
+    item_name = data.get('item_name')
+    quantity = data.get('quantity')
+
+    try:
+        # CompletedOrder tablosundan veriyi al
+        completed_order = CompletedOrder.query.filter_by(table_number=table_number).first()
+        if not completed_order:
+            return jsonify({"error": "Masa bulunamadı"}), 404
+
+        if isinstance(completed_order.details, str):
+            completed_order.details = json.loads(completed_order.details)
+
+        for item in completed_order.details:
+            if item['name'] == item_name:
+                if item['quantity'] < quantity:
+                    return jsonify({"error": "Yetersiz miktar"}), 400
+                item['quantity'] -= quantity
+
+                if item['quantity'] == 0:
+                    completed_order.details.remove(item)
+
+                # Siparişin tamamen boş olması durumunda silin
+                if len(completed_order.details) == 0:
+                    db.session.delete(completed_order)
+                else:
+                    completed_order.details = json.dumps(completed_order.details)  # JSON olarak kaydet
+                db.session.commit()
+                return jsonify({"message": "Ödeme başarıyla işlendi"}), 200
+
+        return jsonify({"error": "Ürün bulunamadı"}), 404
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Hata: {str(e)}"}), 500
+
+
+
 
 @app.route('/api/orders')
 def get_orders():
